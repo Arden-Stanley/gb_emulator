@@ -2,7 +2,7 @@
 
 namespace gbe {
 
-	MMU::MMU(): m_memory(0x10000, 0) {}
+	MMU::MMU() : m_memory(0x10000, 0) {}
 
 	uint8_t MMU::read(uint16_t addr) const {
 		return m_memory.at(addr);

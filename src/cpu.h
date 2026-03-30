@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <unordered_map>
 
 namespace gbe {
 
@@ -10,8 +11,8 @@ namespace gbe {
 
 	class CPU {
 	public:
-
+		CPU();
 	private:
-		  
+		std::unordered_map<Registers, uint8_t> m_registers; 
 	};
 }
