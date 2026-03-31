@@ -9,8 +9,8 @@ namespace gbe {
 		{ Registers::HL, 0 },
 		{ Registers::PC, 0 },
 		{ Registers::SP, 0 }
-	}) {
+	}) {}
 
-	}
+
 
 }

@@ -4,15 +4,17 @@
 
 namespace gbe {
 
-	enum class Registers {
-		AF, BC, DE, 
-		HL,	SP,	PC
+	enum class Register {
+		af, bc, de,    
+		hl, pc, sp
 	};
 
 	class CPU {
 	public:
 		CPU();
+
 	private:
-		std::unordered_map<Registers, uint8_t> m_registers; 
+		uint16_t af, bc, de,
+			hl, pc, sp;
 	};
 }
