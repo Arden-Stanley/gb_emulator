@@ -1,10 +1,11 @@
 #include "bus.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
-uint8_t bus_read(Bus *bus, uint16_t addr) {
+uint8_t bus_read8(Bus *bus, uint16_t addr) {
   if (addr < 0x8000) {
-    return 0x00; // change later
+    return bus->rom[addr]; // change later
   }
   if (addr < 0xA000) {
     return bus->vram[addr - 0x8000];
@@ -34,6 +35,12 @@ uint8_t bus_read(Bus *bus, uint16_t addr) {
     return bus->ie;
   }
   return 0x00;
+}
+
+uint16_t bus_read16(Bus *bus, uint16_t addr) {
+  uint8_t high_byte = bus_read8(bus, addr);
+  uint8_t low_byte = bus_read8(bus, addr++);
+  return (low_byte << 8) | high_byte;
 }
 
 void bus_write(Bus *bus, uint16_t addr, uint8_t data) {
@@ -66,5 +73,23 @@ void bus_write(Bus *bus, uint16_t addr, uint8_t data) {
   }
   if (addr > 0xFFFF) {
     printf("Memory Address Out of Bounds: %X", addr);
+  }
+}
+
+void bus_ld_rom(Bus *bus, const char *path) {
+  FILE *file = fopen(path, "r");
+  if (file == NULL) {
+    printf("No file exists: %s", path);
+    return;
+  }
+  if (fseek(file, 0, SEEK_END) != 0) {
+    fclose(file);
+    return;
+  }
+  long size = ftell(file);
+  char temp[256];
+  bus->rom = malloc(size * sizeof(uint8_t));
+  while (fgets(temp, sizeof(temp), file) != NULL) {
+    strcat();
   }
 }

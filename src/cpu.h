@@ -37,9 +37,10 @@ typedef struct {
   uint16_t pc;
 } CPU;
 
-typedef enum { Z, N, H, C } Flags;
+typedef enum { Z = 0, N = 1, H = 2, C = 3 } Flags;
 
-void cpu_toggle_flag(CPU *cpu, Flags flag);
+void cpu_set_flag(CPU *cpu, Flags flag);
+void cpu_clear_flag(CPU *cpu, Flags flag);
 uint8_t cpu_get_flag(CPU *cpu, Flags flag);
 
 uint8_t cpu_step(CPU *cpu, Bus *bus);

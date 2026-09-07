@@ -1,56 +1,122 @@
 #include "cpu.h"
 
-void cpu_toggle_flag(CPU *cpu, Flags flag) {
-  switch (flag) {
-  case Z:
-    cpu->f ^= (1 << 0);
-    break;
-  case N:
-    cpu->f ^= (1 << 1);
-    break;
-  case H:
-    cpu->f ^= (1 << 2);
-    break;
-  case C:
-    cpu->f ^= (1 << 3);
-    break;
+#include <stdlib.h>
+
+void cpu_set_flag(CPU *cpu, Flags flag) { cpu->f |= (1 << flag); }
+void cpu_clear_flag(CPU *cpu, Flags flag) { cpu->f &= ~(1 << flag); }
+uint8_t cpu_get_flag(CPU *cpu, Flags flag) { return (cpu->f >> flag) & 1; }
+
+static void op_inc_r8(CPU *cpu, uint8_t *r) {
+  if ((*r & 0x0F) == 0x0F) {
+    cpu_set_flag(cpu, H);
   }
+  (*r)++;
+  if (*r == 0) {
+    cpu_clear_flag(cpu, Z);
+  }
+  cpu_clear_flag(cpu, N);
 }
-uint8_t cpu_get_flag(CPU *cpu, Flags flag) {
-  switch (flag) {
-  case Z:
-    return (cpu->f >> 0) & 1;
-  case N:
-    return (cpu->f >> 1) & 1;
-  case H:
-    return (cpu->f >> 2) & 1;
-  case C:
-    return (cpu->f >> 3) & 1;
+
+static void op_inc_mem(CPU *cpu, Bus *bus, uint16_t addr) {
+  uint8_t data = bus_read8(bus, addr);
+  if ((data & 0x0F) == 0x0F) {
+    cpu_set_flag(cpu, H);
   }
+  data++;
+  if (data == 0) {
+    cpu_clear_flag(cpu, Z);
+  }
+  cpu_clear_flag(cpu, N);
+  bus_write(bus, addr, data);
+}
+
+static void op_inc_r16(CPU *cpu, uint16_t *r) { (*r)++; }
+
+static void op_dec_r8(CPU *cpu, uint8_t *r) {
+  if ((*r & 0x0F) == 0x00) {
+    cpu_set_flag(cpu, H);
+  }
+  (*r)--;
+  if (*r == 0) {
+    cpu_set_flag(cpu, Z);
+  }
+  cpu_set_flag(cpu, N);
+}
+
+static void op_rlc_r8(CPU *cpu, uint8_t *r) {
+  uint8_t carry_bit = (*r) >> 7;
+  if (carry_bit)
+    cpu_set_flag(cpu, C);
+  else
+    cpu_clear_flag(cpu, C);
+  *r = ((*r) << 1) | carry_bit;
+  if (r == &cpu->a)
+    cpu_clear_flag(cpu, Z);
+  else {
+    if (*r == 0)
+      cpu_set_flag(cpu, Z);
+  }
+  cpu_clear_flag(cpu, N);
+  cpu_clear_flag(cpu, H);
+}
+
+static void op_rlc_mem(CPU *cpu, Bus *bus, uint16_t addr) {
+  uint8_t data = bus_read8(bus, addr);
+  uint8_t carry_bit = (data) >> 7;
+  if (carry_bit)
+    cpu_set_flag(cpu, C);
+  else
+    cpu_clear_flag(cpu, C);
+  data = ((data) << 1) | carry_bit;
+  if (data == 0) {
+    cpu_set_flag(cpu, Z);
+  }
+  cpu_clear_flag(cpu, N);
+  cpu_clear_flag(cpu, H);
+  bus_write(bus, addr, data);
 }
 
 uint8_t cpu_step(CPU *cpu, Bus *bus) {
-  uint8_t opcode = bus_read(bus, cpu->pc++);
+  uint8_t opcode = bus_read8(bus, cpu->pc++);
 
   switch (opcode) {
 
   case 0x00: // noop
     return 1;
   case 0x01: // ld bc, n16
-    cpu->bc = bus_read(bus, cpu->pc++);
+    cpu->bc = bus_read16(bus, cpu->pc++);
+    cpu->pc++;
     return 3;
   case 0x02: // ld [bc], a
     bus_write(bus, cpu->bc, cpu->a);
     return 2;
   case 0x03: // inc bc
-    cpu->bc++;
+    op_inc_r16(cpu, &cpu->bc);
     return 2;
   case 0x04: // inc b
-             // todo
+    op_inc_r8(cpu, &cpu->b);
+    return 1;
   case 0x05: // dec b
-             // todo
-  case 0x06:
+    op_dec_r8(cpu, &cpu->b);
+    return 1;
+  case 0x06: // ld b, n8
+    cpu->b = bus_read8(bus, cpu->pc++);
+    return 2;
+  case 0x07: // rlca
+    op_rlc_r8(cpu, &cpu->a);
+    return 1;
+  case 0x08: // ld [a16], sp
+  {
+    uint16_t addr = bus_read16(bus, cpu->pc++);
+    cpu->pc++;
+    bus_write(bus, addr, cpu->sp & 0xFF);
+    bus_write(bus, addr + 1, (cpu->sp >> 8));
   }
+    return 5;
+  case 0x09:
 
-  return 0;
+  default:
+    printf("Invalid Opcode: %X", opcode);
+    exit(EXIT_FAILURE);
+  }
 }

@@ -17,8 +17,10 @@ typedef struct {
   uint8_t ie;
 } Bus;
 
-uint8_t bus_read(Bus *bus, uint16_t addr);
-
+uint8_t bus_read8(Bus *bus, uint16_t addr);
+uint16_t bus_read16(Bus *bus, uint16_t addr);
 void bus_write(Bus *bus, uint16_t addr, uint8_t data);
+
+void bus_ld_rom(Bus *bus, const char *path);
 
 #endif
