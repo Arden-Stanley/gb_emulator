@@ -1,2 +1,2 @@
-# GBEmulator
-Implementation of my own GameBoy emulator
+# game-boy-emulator
+Implementation of my own Game Boy emulator
